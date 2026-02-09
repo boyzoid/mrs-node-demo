@@ -1,0 +1,29 @@
+{
+  "name": "node-mrs-ai",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node src/server.js",
+    "dev": "NODE_ENV=development node src/server.js",
+    "dev:watch": "NODE_ENV=development node --watch src/server.js",
+    "dev:debug": "NODE_ENV=development node --inspect src/server.js",
+    "start:bg": "sh -c 'mkdir -p logs && nohup node src/server.js > logs/server.out 2>&1 & echo $! > .pid && echo Started PID $(cat .pid)'",
+    "dev:bg": "sh -c 'mkdir -p logs && nohup DEBUG_AUTH=1 NODE_ENV=development node src/server.js > logs/server.out 2>&1 & echo $! > .pid && echo Started PID $(cat .pid)'",
+    "stop": "sh -c 'if [ -f .pid ]; then kill -TERM $(cat .pid) && echo Stopping $(cat .pid) && rm -f .pid; else echo .pid not found; fi'",
+    "status": "sh -c 'if [ -f .pid ]; then ps -p $(cat .pid) -o pid,ppid,etime,comm; else echo stopped; fi'",
+    "logs": "sh -c 'test -f logs/server.out && tail -n 200 -f logs/server.out || echo no logs yet'"
+  },
+  "keywords": [],
+  "author": "Scott Stroz",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^17.2.4",
+    "express": "^5.2.1",
+    "undici": "^7.21.0"
+  }
+}
