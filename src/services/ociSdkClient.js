@@ -8,7 +8,7 @@
 //  - Optional: OCI_SDK_CONFIG_PROFILE (defaults to DEFAULT)
 
 import { GenerativeAiInferenceClient } from 'oci-generativeaiinference';
-import { SessionAuthDetailProvider, NoRetryConfigurationDetails } from 'oci-common';
+import { ConfigFileAuthenticationDetailsProvider, NoRetryConfigurationDetails } from 'oci-common';
 
 function required(name) {
   const v = process.env[name];
@@ -17,50 +17,98 @@ function required(name) {
 }
 
 export async function ociSdkChat(prompt) {
-  const region = required('OCI_REGION');
+  try {
+    const compartmentId = required('OCI_COMPARTMENT_ID');
+    const modelId = required('OCI_MODEL_ID');
+
+
+    // Use ConfigFileAuthenticationDetailsProvider like your working code
+    const provider = new ConfigFileAuthenticationDetailsProvider();
+
+    // Create client with explicit configuration
+    const client = new GenerativeAiInferenceClient({
+      authenticationDetailsProvider: provider,
+      endpoint: 'https://inference.generativeai.us-chicago-1.oci.oraclecloud.com'
+    });
+
+    // Construct request exactly like the working TypeScript example
+    const chatRequest = {
+      chatDetails: {
+        compartmentId: compartmentId,
+        servingMode: {
+          modelId: modelId,
+          servingType: 'ON_DEMAND'
+        },
+        chatRequest: {
+          messages: [
+            {
+              role: 'USER',
+              content: [
+                {
+                  type: 'TEXT',
+                  text: prompt
+                }
+              ]
+            }
+          ],
+          apiFormat: 'GENERIC',
+          maxTokens: 1024,
+          temperature: 0.2,
+          frequencyPenalty: 0,
+          presencePenalty: 0,
+          topK: 1,
+          topP: 0.95
+        }
+      },
+      retryConfiguration: NoRetryConfigurationDetails
+    };
+
+    const response = await client.chat(chatRequest);
+
+
+    // Extract text from the correct SDK response structure
+    const text = response?.chatResult?.chatResponse?.choices?.[0]?.message?.content?.[0]?.text ||
+                'No text found in response';
+
+
+    return String(text);
+  } catch (error) {
+    console.error('[OCI] SDK Error:', error.message);
+
+    // If SDK fails, fall back to CLI
+    return await ociCliChat(prompt);
+  }
+}
+
+// Keep CLI as fallback
+async function ociCliChat(prompt) {
+  const { exec } = await import('child_process');
+  const { promisify } = await import('util');
+  const fs = await import('fs');
+
+  const execAsync = promisify(exec);
   const compartmentId = required('OCI_COMPARTMENT_ID');
   const modelId = required('OCI_MODEL_ID');
-  const configLocation = process.env.OCI_SDK_CONFIG_LOCATION || process.env.HOME + '/.oci/config';
-  const configProfile = process.env.OCI_SDK_CONFIG_PROFILE || 'DEFAULT';
 
-  const provider = new SessionAuthDetailProvider(configLocation, configProfile);
-  const client = new GenerativeAiInferenceClient({ authenticationDetailsProvider: provider });
-  client.endpoint = `https://inference.generativeai.${region}.oci.oraclecloud.com`;
-
+  const servingMode = { modelId, servingType: "ON_DEMAND" };
   const chatRequest = {
-    chatDetails: {
-      compartmentId,
-      servingMode: { servingType: 'ON_DEMAND', modelId },
-      chatRequest: {
-        messages: [
-          {
-            role: 'USER',
-            content: [ { type: 'TEXT', text: prompt } ],
-          },
-        ],
-        apiFormat: 'GENERIC',
-        maxTokens: 1024,
-        temperature: 0.2,
-        frequencyPenalty: 0,
-        presencePenalty: 0,
-        topK: 1,
-        topP: 0.95,
-      },
-    },
-    retryConfiguration: NoRetryConfigurationDetails,
+    messages: [{ role: "USER", content: [{ type: "TEXT", text: prompt }] }],
+    apiFormat: "GENERIC", maxTokens: 1024, temperature: 0.2,
+    frequencyPenalty: 0, presencePenalty: 0, topK: 1, topP: 0.95
   };
 
-  const resp = await client.chat(chatRequest);
+  const servingModeFile = '/tmp/oci-serving-mode.json';
+  const chatRequestFile = '/tmp/oci-chat-request.json';
 
-  // Best-effort extraction of text content; fallback to JSON
-  try {
-    const o = resp;
-    const text = o?.chatResult?.output?.[0]?.content?.[0]?.text
-      || o?.chatResult?.outputText
-      || o?.data?.chatResult?.output?.[0]?.content?.[0]?.text
-      || o?.data?.chatResult?.outputText;
-    return String(text || JSON.stringify(resp));
-  } catch {
-    return JSON.stringify(resp);
-  }
+  fs.default.writeFileSync(servingModeFile, JSON.stringify(servingMode, null, 2));
+  fs.default.writeFileSync(chatRequestFile, JSON.stringify(chatRequest, null, 2));
+
+  const command = `oci generative-ai-inference chat-result chat --compartment-id "${compartmentId}" --serving-mode file://${servingModeFile} --chat-request file://${chatRequestFile}`;
+  const { stdout } = await execAsync(command);
+
+  fs.default.unlinkSync(servingModeFile);
+  fs.default.unlinkSync(chatRequestFile);
+
+  const response = JSON.parse(stdout);
+  return response?.data?.[`chat-response`]?.choices?.[0]?.message?.content?.[0]?.text || 'CLI fallback failed';
 }

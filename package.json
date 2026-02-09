@@ -24,6 +24,7 @@
     "cookie-parser": "^1.4.7",
     "dotenv": "^17.2.4",
     "express": "^5.2.1",
+    "oci-sdk": "^2.91.0",
     "undici": "^7.21.0"
   }
 }

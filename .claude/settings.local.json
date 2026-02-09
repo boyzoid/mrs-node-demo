@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Read(//Users/sstroz/.oci/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
