@@ -1,3 +1,4 @@
+// Express HTTP server wiring the demo app (auth, API proxy, SSE, AI page)
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import path from 'node:path';
@@ -19,6 +20,7 @@ import { MrsClient } from './mrsClient.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Dev helper: allow self-signed TLS for MRS backend if explicitly enabled
 if (process.env.MRS_INSECURE_TLS === 'true') {
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 }
@@ -29,7 +31,7 @@ const mrs = new MrsClient({
   username: process.env.MRS_USERNAME,
   password: process.env.MRS_PASSWORD,
   authApp: process.env.MRS_AUTH_APP || 'MySQL',
-  sessionType: process.env.MRS_SESSION_TYPE || 'bearer'
+  sessionType: process.env.MRS_SESSION_TYPE || 'bearer',
 });
 
 const app = express();
@@ -42,17 +44,14 @@ app.get('/', (req, res) => res.send('Node.js + MySQL REST Service + AI'));
 registerAuth(app, mrs);
 
 // UI guards and static
+// Simple UI auth guard (redirects unauthenticated users to /login)
 app.use('/ui', (req, res, next) => {
   if (!isAuthenticated(req)) return res.redirect(302, '/login');
   next();
 });
 // Serve index directly to avoid redirect chains
-app.get('/ui', (req, res) =>
-  res.sendFile(path.join(__dirname, '..', 'public', 'index.html'))
-);
-app.get('/ui/', (req, res) =>
-  res.sendFile(path.join(__dirname, '..', 'public', 'index.html'))
-);
+app.get('/ui', (req, res) => res.sendFile(path.join(__dirname, '..', 'public', 'index.html')));
+app.get('/ui/', (req, res) => res.sendFile(path.join(__dirname, '..', 'public', 'index.html')));
 app.use('/ui', express.static(path.join(__dirname, '..', 'public'), { extensions: ['html'] }));
 
 registerSse(app);
@@ -90,6 +89,9 @@ app.get('/_debug/oci', async (req, res) => {
     const out = await ociProbe();
     res.type('application/json').send(out);
   } catch (e) {
-    res.status(500).type('application/json').send({ error: e?.message || String(e) });
+    res
+      .status(500)
+      .type('application/json')
+      .send({ error: e?.message || String(e) });
   }
 });

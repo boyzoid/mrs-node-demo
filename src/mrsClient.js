@@ -35,7 +35,7 @@ export class MrsClient {
       const json = JSON.parse(body);
       if (json.accessToken) this.bearer = 'Bearer ' + json.accessToken;
       else throw new Error('No accessToken in response');
-    } catch (e) {
+    } catch {
       throw new Error('Login failed: ' + body);
     }
   }
@@ -58,7 +58,8 @@ export class MrsClient {
   async get(path, rawQuery) {
     const url = this.baseUrl + path + (rawQuery ? (path.includes('?') ? '&' : '?') + rawQuery : '');
     await this.loginIfPossible();
-    const res = await fetch(url, { headers: this.headers() });
+    // Retry GET on 401 like write operations do
+    const res = await this.withAuthRetry(() => fetch(url, { headers: this.headers() }));
     return await res.text();
   }
 

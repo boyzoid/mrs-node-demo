@@ -13,7 +13,10 @@
     "dev:bg": "sh -c 'mkdir -p logs && nohup DEBUG_AUTH=1 NODE_ENV=development node src/server.js > logs/server.out 2>&1 & echo $! > .pid && echo Started PID $(cat .pid)'",
     "stop": "sh -c 'if [ -f .pid ]; then kill -TERM $(cat .pid) && echo Stopping $(cat .pid) && rm -f .pid; else echo .pid not found; fi'",
     "status": "sh -c 'if [ -f .pid ]; then ps -p $(cat .pid) -o pid,ppid,etime,comm; else echo stopped; fi'",
-    "logs": "sh -c 'test -f logs/server.out && tail -n 200 -f logs/server.out || echo no logs yet'"
+    "logs": "sh -c 'test -f logs/server.out && tail -n 200 -f logs/server.out || echo no logs yet'",
+    "lint": "eslint . --ext .js",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "keywords": [],
   "author": "Scott Stroz",
@@ -25,6 +28,14 @@
     "dotenv": "^17.2.4",
     "express": "^5.2.1",
     "oci-sdk": "^2.91.0",
+    "oci-common": "^2.91.0",
+    "oci-generativeaiinference": "^2.91.0",
     "undici": "^7.21.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.12.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.29.1",
+    "prettier": "^3.3.3"
   }
 }

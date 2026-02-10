@@ -2,8 +2,18 @@ import bcrypt from 'bcryptjs';
 import { LoginPage } from './loginPage.js';
 import { randomBytes } from 'node:crypto';
 
+// Simple cookie/session management for demo purposes. In production, prefer a
+// durable session store and set `COOKIE_SECURE=true` when served over HTTPS.
+
 export const SESSION_COOKIE = 'SESSION';
 const SESSIONS = new Map();
+const COOKIE_BASE = {
+  httpOnly: true,
+  sameSite: 'lax',
+  path: '/',
+  // Enable secure cookies when explicitly configured (behind HTTPS/proxy)
+  secure: process.env.COOKIE_SECURE === 'true',
+};
 
 export function isAuthenticated(req) {
   const sid = req.cookies?.[SESSION_COOKIE];
@@ -11,7 +21,15 @@ export function isAuthenticated(req) {
   if (process.env.DEBUG_AUTH === '1') {
     try {
       const short = sid ? String(sid).slice(0, 8) + '…' : 'none';
-      console.log('[auth] isAuthenticated', req.method, req.originalUrl, 'sid:', short, 'inMap:', sid ? SESSIONS.has(sid) : false);
+      console.log(
+        '[auth] isAuthenticated',
+        req.method,
+        req.originalUrl,
+        'sid:',
+        short,
+        'inMap:',
+        sid ? SESSIONS.has(sid) : false
+      );
     } catch {}
   }
   return ok;
@@ -21,7 +39,16 @@ function newSession(username) {
   const id = randomBytes(24).toString('base64url');
   SESSIONS.set(id, username);
   if (process.env.DEBUG_AUTH === '1') {
-    try { console.log('[auth] newSession for', username, 'sid:', String(id).slice(0, 8) + '…', 'sessions:', SESSIONS.size); } catch {}
+    try {
+      console.log(
+        '[auth] newSession for',
+        username,
+        'sid:',
+        String(id).slice(0, 8) + '…',
+        'sessions:',
+        SESSIONS.size
+      );
+    } catch {}
   }
   return id;
 }
@@ -54,7 +81,11 @@ export function registerAuth(app, mrs) {
           .send(LoginPage.html('Please enter username and password.'));
       }
       if (process.env.DEBUG_AUTH === '1') {
-        try { console.log('[auth] login attempt for user:', username); } catch {}
+        try {
+          console.log('[auth] login attempt for user:', username);
+        } catch {
+          // ignore debug logging errors
+        }
       }
 
       const q = encodeURIComponent(JSON.stringify({ username: { $eq: username } }));
@@ -64,7 +95,9 @@ export function registerAuth(app, mrs) {
         try {
           const sample = (jsonText || '').slice(0, 160).replace(/\n/g, ' ');
           console.log('[auth] users lookup raw length:', (jsonText || '').length, 'sample:', sample);
-        } catch {}
+        } catch {
+          // ignore debug logging errors
+        }
       }
 
       const storedHash = findFirstPasswordHash(jsonText)?.trim();
@@ -75,7 +108,11 @@ export function registerAuth(app, mrs) {
         } catch {}
       }
       if (process.env.DEBUG_AUTH === '1') {
-        try { console.log('[auth] compare result:', ok, 'hashPresent:', !!storedHash); } catch {}
+        try {
+          console.log('[auth] compare result:', ok, 'hashPresent:', !!storedHash);
+        } catch {
+          // ignore debug logging errors
+        }
       }
       if (!ok) {
         return res
@@ -85,19 +122,22 @@ export function registerAuth(app, mrs) {
       }
 
       const sid = newSession(username);
-      res.cookie(SESSION_COOKIE, sid, {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        maxAge: 8 * 60 * 60 * 1000,
-      });
+      res.cookie(SESSION_COOKIE, sid, { ...COOKIE_BASE, maxAge: 8 * 60 * 60 * 1000 });
       if (process.env.DEBUG_AUTH === '1') {
-        try { console.log('[auth] login OK for', username, 'sid set'); } catch {}
+        try {
+          console.log('[auth] login OK for', username, 'sid set');
+        } catch {
+          // ignore debug logging errors
+        }
       }
       return res.redirect(302, '/ui');
     } catch (e) {
       if (process.env.DEBUG_AUTH === '1') {
-        try { console.log('[auth] login error:', e && e.message ? e.message : e); } catch {}
+        try {
+          console.log('[auth] login error:', e && e.message ? e.message : e);
+        } catch {
+          // ignore debug logging errors
+        }
       }
       return res.status(500).send('Login error: ' + e.message);
     }
@@ -106,12 +146,7 @@ export function registerAuth(app, mrs) {
   app.get('/auth/logout', (req, res) => {
     const sid = req.cookies?.[SESSION_COOKIE];
     if (sid) SESSIONS.delete(sid);
-    res.cookie(SESSION_COOKIE, '', {
-      httpOnly: true,
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 0,
-    });
+    res.cookie(SESSION_COOKIE, '', { ...COOKIE_BASE, maxAge: 0 });
     res.redirect(302, '/login');
   });
 
@@ -142,12 +177,7 @@ export function registerAuth(app, mrs) {
   app.get('/_debug/loginAs', (req, res) => {
     const u = String(req.query?.u || 'dev');
     const sid = newSession(u);
-    res.cookie(SESSION_COOKIE, sid, {
-      httpOnly: true,
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 8 * 60 * 60 * 1000,
-    });
+    res.cookie(SESSION_COOKIE, sid, { ...COOKIE_BASE, maxAge: 8 * 60 * 60 * 1000 });
     res.redirect(302, '/ui');
   });
 }

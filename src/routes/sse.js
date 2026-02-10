@@ -22,7 +22,9 @@ export function registerSse(app) {
     req.on('close', () => {
       clearInterval(interval);
       sseHub.remove(res);
-      try { res.end(); } catch {}
+      try {
+        res.end();
+      } catch {}
     });
   });
 }

@@ -1,3 +1,5 @@
+// AI page endpoint: streams a minimal shell immediately, then injects
+// AI-generated HTML once it's ready. Uses safe escaping before injection.
 import { isAuthenticated } from '../auth.js';
 import { buildAiHtml } from '../services/explainer.js';
 
@@ -36,10 +38,10 @@ export function registerAi(app, mrs) {
       const actorJson = await mrs.get('/sakila/actor/' + encodeURIComponent(id), null);
       const html = await buildAiHtml(actorJson);
       const safe = html
-        .replace(/\\/g, "\\\\")
-        .replace(/`/g, "\\`")
+        .replace(/\\/g, '\\\\')
+        .replace(/`/g, '\\`')
         // Prevent closing the injected <script> tag by escaping </script>
-        .replace(/<\/script>/g, "<\\/script>");
+        .replace(/<\/script>/g, '<\\/script>');
       const inject = `
                 <script>
                   const target = document.getElementById('app');
