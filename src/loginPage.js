@@ -28,14 +28,14 @@ export const LoginPage = {
             <body class="bg-body-tertiary">
               <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
                 <div class="container">
-                  <a class="navbar-brand" href="/ui/">Helidon Demo</a>
+                  <a class="navbar-brand" href="/ui/">MySQL REST Service Demo</a>
                 </div>
               </nav>
               <main class="container page">
                 <div class="card shadow-sm">
                   <div class="card-body">
                     <h1 class="h3">Sign in</h1>
-                    <p class="text-body-secondary">Access the Helidon UI</p>
+                    <p class="text-body-secondary">Access the MySQL REST Service UI</p>
                     ${err}
                     <form method="post" action="/auth/login" class="vstack gap-3">
                       <div>

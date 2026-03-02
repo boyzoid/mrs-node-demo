@@ -1,6 +1,6 @@
 # node-mrs-ai
 
-Node.js port of the Helidon demo. Provides:
+Node.js port of the MySQL REST Service demo. Provides:
 
 - Auth with bcrypt against MRS `/sakila/users/`
 - Actors CRUD via MRS proxy
