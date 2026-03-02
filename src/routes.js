@@ -26,14 +26,6 @@ export function registerRoutes(app, mrs) {
     res.type('application/json').send(body);
   });
 
-  app.patch('/api/actors/:id', async (req, res) => {
-    const id = encodeURIComponent(req.params.id);
-    console.log('[API] PATCH /api/actors/' + req.params.id, 'body:', req.body);
-    const body = await mrs.patchJson('/sakila/actor/' + id, JSON.stringify(req.body));
-    console.log('[API] MRS PATCH response:', body);
-    res.type('application/json').send(body);
-  });
-
   app.put('/api/actors/:id', async (req, res) => {
     const id = encodeURIComponent(req.params.id);
     console.log('[API] PUT /api/actors/' + req.params.id, 'body:', req.body);

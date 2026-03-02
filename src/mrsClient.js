@@ -65,20 +65,6 @@ export class MrsClient {
     return await res.text();
   }
 
-  async postJson(path, body) {
-    const url = this.baseUrl + path;
-    console.log('[MRS] POST', url);
-    await this.loginIfPossible();
-    const res = await this.withAuthRetry(() =>
-      fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...this.headers() },
-        body,
-      })
-    );
-    return await res.text();
-  }
-
   async patchJson(path, body) {
     const url = this.baseUrl + path;
     console.log('[MRS] PATCH', url);
