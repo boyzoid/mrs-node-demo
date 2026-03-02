@@ -3,7 +3,11 @@
     "allow": [
       "Bash(npm install:*)",
       "Read(//Users/sstroz/.oci/**)",
-      "Bash(curl -I http://localhost:8080/)"
+      "Bash(curl -I http://localhost:8080/)",
+      "Bash(node -c src/auth.js)",
+      "Bash(node -c src/routes.js)",
+      "Bash(npm run lint)",
+      "Bash(node -c src/server.js)"
     ],
     "deny": [],
     "ask": []

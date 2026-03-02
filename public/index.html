@@ -82,12 +82,6 @@
         </div>
       </div>
 
-      <div class="card shadow-sm">
-        <div class="card-header">Live events</div>
-        <div class="card-body">
-          <pre id="events" class="form-control bg-body-tertiary"></pre>
-        </div>
-      </div>
     </main>
 
     <script>
@@ -146,18 +140,6 @@
       document.getElementById('load').addEventListener('click', load);
       load();
 
-      // Live updates
-      try {
-        const ev = new EventSource('/events');
-        ev.onmessage = (e) => {
-          const pre = document.getElementById('events');
-          pre.textContent = (pre.textContent + '\n' + e.data).trim().slice(-2000);
-          try {
-            const msg = JSON.parse(e.data);
-            if (msg.type === 'actor.changed') load();
-          } catch {}
-        };
-      } catch {}
     </script>
   </body>
 </html>

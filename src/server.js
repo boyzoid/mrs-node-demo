@@ -1,4 +1,4 @@
-// Express HTTP server wiring the demo app (auth, API proxy, SSE, AI page)
+// Express HTTP server wiring the demo app (auth, API proxy)
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import path from 'node:path';
@@ -11,10 +11,7 @@ if (!globalThis.fetch) globalThis.fetch = undiciFetch;
 dotenv.config();
 
 import { registerAuth, isAuthenticated } from './auth.js';
-import { registerApi } from './routes/api.js';
-import { registerAi } from './routes/ai.js';
-import { ociProbe } from './services/explainer.js';
-import { registerSse } from './routes/sse.js';
+import { registerRoutes } from './routes.js';
 import { MrsClient } from './mrsClient.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -39,7 +36,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-app.get('/', (req, res) => res.send('Node.js + MySQL REST Service + AI'));
+app.get('/', (req, res) => res.send('Node.js + MySQL REST Service'));
 
 registerAuth(app, mrs);
 
@@ -54,9 +51,7 @@ app.get('/ui', (req, res) => res.sendFile(path.join(__dirname, '..', 'public', '
 app.get('/ui/', (req, res) => res.sendFile(path.join(__dirname, '..', 'public', 'index.html')));
 app.use('/ui', express.static(path.join(__dirname, '..', 'public'), { extensions: ['html'] }));
 
-registerSse(app);
-registerApi(app, mrs);
-registerAi(app, mrs);
+registerRoutes(app, mrs);
 
 const server = app.listen(PORT, () => {
   console.log(`Server listening on http://localhost:${PORT}`);
@@ -83,15 +78,3 @@ function shutdown(signal) {
 process.on('SIGINT', () => shutdown('SIGINT'));
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 
-// Debug endpoint to verify OCI configuration and endpoint mapping
-app.get('/_debug/oci', async (req, res) => {
-  try {
-    const out = await ociProbe();
-    res.type('application/json').send(out);
-  } catch (e) {
-    res
-      .status(500)
-      .type('application/json')
-      .send({ error: e?.message || String(e) });
-  }
-});
