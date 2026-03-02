@@ -139,7 +139,7 @@ export function registerAuth(app, mrs) {
           // ignore debug logging errors
         }
       }
-      return res.status(500).send('Login error: ' + e.message);
+      return res.status(500).send('Login error: ' + (e?.message || String(e)));
     }
   });
 

@@ -70,6 +70,7 @@
       const id = params.get('id');
 
       let currentEtag = null;
+      let originalActorData = null;
 
       function showError(t) {
         const b = document.getElementById('msg');
@@ -89,11 +90,14 @@
             return;
           }
           const a = await res.json();
+          console.log('Loaded actor data (full object):', JSON.stringify(a, null, 2));
+          originalActorData = a; // Store the complete original object
           document.getElementById('id').value = a.actorId ?? '';
           document.getElementById('first').value = a.firstName || '';
           document.getElementById('last').value = a.lastName || '';
           document.getElementById('lastUpdate').value = a.lastUpdate || '';
           currentEtag = (a._metadata && a._metadata.etag) || res.headers.get('ETag');
+          console.log('Current ETag:', currentEtag);
         } catch {
           showError('Network error while loading.');
         }
@@ -110,14 +114,15 @@
         try {
           let res;
           if (id) {
-            // PUT requires full doc + ETag (MRS)
+            // PUT with only the actor fields that should be updated
             const body = {
               actorId: Number(id),
               firstName,
               lastName,
-              lastUpdate: document.getElementById('lastUpdate').value, // required by MRS mapping
+              lastUpdate: document.getElementById('lastUpdate').value,
               _metadata: { etag: currentEtag },
             };
+            console.log('Sending PUT request:', { id, body });
             res = await fetch(`${API}/${id}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
@@ -135,6 +140,7 @@
 
           if (!res.ok) {
             const txt = await res.text();
+            console.error('Save failed:', res.status, txt);
             if (res.status === 412) showError('Stale ETag. Reload and try again.');
             else if (res.status === 403)
               showError('Forbidden: missing UPDATE privilege on /sakila/actor.');
@@ -143,8 +149,13 @@
             document.getElementById('busy').style.display = 'none';
             return;
           }
+
+          const saveResponse = await res.text();
+          console.log('Save response from server:', saveResponse);
+          console.log('Save successful, redirecting to /ui/');
           location.href = '/ui/';
-        } catch {
+        } catch (err) {
+          console.error('Caught exception during save:', err);
           showError('Network error while saving.');
           document.getElementById('busy').style.display = 'none';
         }

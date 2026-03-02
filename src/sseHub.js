@@ -9,9 +9,7 @@ export const sseHub = {
   /** Register a client connection and send initial event. */
   add(res) {
     this.clients.add(res);
-    try {
-      res.write(`data: ${JSON.stringify({ type: 'connected' })}\n\n`);
-    } catch {}
+    res.write(`data: ${JSON.stringify({ type: 'connected' })}\n\n`);
   },
 
   /** Remove a client (e.g., on close). */

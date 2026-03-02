@@ -20,7 +20,9 @@ export class MrsClient {
     if (this.authApp !== 'MySQL') {
       throw new Error('MySQL Rest Service requires MRS_AUTH_APP=MySQL');
     }
-    const res = await fetch(this.baseUrl + '/authentication/login', {
+    const loginUrl = this.baseUrl + '/authentication/login';
+    console.log('[MRS] POST', loginUrl);
+    const res = await fetch(loginUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...this.headers() },
       body: JSON.stringify({
@@ -57,16 +59,18 @@ export class MrsClient {
 
   async get(path, rawQuery) {
     const url = this.baseUrl + path + (rawQuery ? (path.includes('?') ? '&' : '?') + rawQuery : '');
+    console.log('[MRS] GET', url);
     await this.loginIfPossible();
-    // Retry GET on 401 like write operations do
     const res = await this.withAuthRetry(() => fetch(url, { headers: this.headers() }));
     return await res.text();
   }
 
   async postJson(path, body) {
+    const url = this.baseUrl + path;
+    console.log('[MRS] POST', url);
     await this.loginIfPossible();
     const res = await this.withAuthRetry(() =>
-      fetch(this.baseUrl + path, {
+      fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...this.headers() },
         body,
@@ -76,9 +80,11 @@ export class MrsClient {
   }
 
   async patchJson(path, body) {
+    const url = this.baseUrl + path;
+    console.log('[MRS] PATCH', url);
     await this.loginIfPossible();
     const res = await this.withAuthRetry(() =>
-      fetch(this.baseUrl + path, {
+      fetch(url, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', ...this.headers() },
         body,
@@ -88,9 +94,11 @@ export class MrsClient {
   }
 
   async putJson(path, body) {
+    const url = this.baseUrl + path;
+    console.log('[MRS] PUT', url);
     await this.loginIfPossible();
     const res = await this.withAuthRetry(() =>
-      fetch(this.baseUrl + path, {
+      fetch(url, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...this.headers() },
         body,
@@ -100,9 +108,11 @@ export class MrsClient {
   }
 
   async delete(path) {
+    const url = this.baseUrl + path;
+    console.log('[MRS] DELETE', url);
     await this.loginIfPossible();
     const res = await this.withAuthRetry(() =>
-      fetch(this.baseUrl + path, { method: 'DELETE', headers: this.headers() })
+      fetch(url, { method: 'DELETE', headers: this.headers() })
     );
     return await res.text();
   }

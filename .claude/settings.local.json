@@ -1,6 +1,10 @@
 {
   "permissions": {
-    "allow": ["Bash(npm install:*)", "Read(//Users/sstroz/.oci/**)"],
+    "allow": [
+      "Bash(npm install:*)",
+      "Read(//Users/sstroz/.oci/**)",
+      "Bash(curl -I http://localhost:8080/)"
+    ],
     "deny": [],
     "ask": []
   }

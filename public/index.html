@@ -46,7 +46,7 @@
               <input id="q" class="form-control" placeholder="e.g. GUI" />
             </div>
             <div class="col-auto">
-              <button id="load" class="btn btn-primary">Search</button>
+              <button id="load" class="btn btn-primary mt-4">Search</button>
               <span id="busy" class="align-middle ms-2" aria-live="polite">
                 <span
                   class="spinner-border spinner-border-sm"
@@ -74,7 +74,6 @@
                   <th>Last</th>
                   <th>Updated</th>
                   <th></th>
-                  <th></th>
                 </tr>
               </thead>
               <tbody></tbody>
@@ -96,11 +95,36 @@
       const busy = document.getElementById('busy');
       const tbody = document.querySelector('#tbl tbody');
 
+      function formatDate(dateString) {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        if (isNaN(date)) return dateString;
+
+        const options = {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true
+        };
+
+        return date.toLocaleDateString('en-US', options);
+      }
+
       async function load() {
         busy.style.display = 'inline';
-        const q = document.getElementById('q').value.trim();
+        const searchTerm = document.getElementById('q').value.trim();
         const params = new URLSearchParams();
-        if (q) params.set('q', JSON.stringify({ lastName: { $like: q + '%' } }));
+
+        // Build the query object with filtering and sorting
+        const queryObj = {};
+        if (searchTerm) {
+          queryObj.lastName = { $like: searchTerm + '%' };
+        }
+        queryObj.$orderby = { lastName: 1, firstName: 1 };
+
+        params.set('q', JSON.stringify(queryObj));
         const res = await fetch(API + '?' + params.toString());
         const data = await res.json();
         const rows = data.items || data.data || [];
@@ -111,9 +135,8 @@
       <td>${r.actorId}</td>
       <td>${r.firstName}</td>
       <td>${r.lastName}</td>
-      <td><code>${r.lastUpdate}</code></td>
+      <td>${formatDate(r.lastUpdate)}</td>
       <td><a href="/ui/edit.html?id=${r.actorId}">Edit</a></td>
-      <td><a href="/ai/actors/${r.actorId}/explain">AI Summary</a></td>
     </tr>`
           )
           .join('');

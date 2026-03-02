@@ -14,9 +14,7 @@ export function registerSse(app) {
     sseHub.add(res);
 
     const interval = setInterval(() => {
-      try {
-        sseHub.broadcastJson(JSON.stringify({ type: 'ping', ts: Date.now() }));
-      } catch {}
+      sseHub.broadcastJson(JSON.stringify({ type: 'ping', ts: Date.now() }));
     }, 15000);
 
     req.on('close', () => {

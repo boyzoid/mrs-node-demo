@@ -40,7 +40,6 @@ export function registerAi(app, mrs) {
       const safe = html
         .replace(/\\/g, '\\\\')
         .replace(/`/g, '\\`')
-        // Prevent closing the injected <script> tag by escaping </script>
         .replace(/<\/script>/g, '<\\/script>');
       const inject = `
                 <script>

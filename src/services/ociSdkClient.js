@@ -91,8 +91,6 @@ export async function ociSdkChat(prompt) {
     return String(text);
   } catch (error) {
     console.warn('[OCI] SDK Error:', error?.message || error);
-
-    // If SDK fails, fall back to CLI
     return await ociCliChat(prompt);
   }
 }
